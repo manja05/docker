@@ -1,0 +1,55 @@
+name: 29936 test
+
+on: 
+  push: 
+    branches: [ main ]
+
+jobs: 
+  preveri_test:
+    runs-on: self-hosted
+
+    steps: 
+    - name: Prenesi kodo
+      uses: actions/checkout@v4
+
+    - name: Preveri ce obstajajo testne skripte
+      run: |
+        {
+          if [ ! -d "tests" ]; then
+            echo "Testi ne obstajajo" > napaka.txt
+            exit 1
+          else 
+            echo "OK" > napaka.txt
+          fi
+        }
+    
+    - name: Pripravi izvajalno okolje in pozeni
+      uses: actions/upload-artifact@v3
+      with: 
+        name: napaka
+        path: napaka.txt
+  
+  zazeni_test:
+    runs-on: self-hosted
+    needs: preveri_test
+
+    steps: 
+      - uses: actions/checkout@v3
+
+      - name: Prenesi artefakt
+        uses: actions/download-artifact@v3
+        with: 
+          name: napaka
+      
+      - name: Preveri napako
+        run: |
+          if grep -q "Testi ne obstajajo" napaka.txt; then
+            echo "Napaka najdena"
+            exit 1
+          fi
+      
+      - name: Namesti odvisnosti
+        run: npm install 
+      
+      - name: Zazeni testn
+        run: npm start
